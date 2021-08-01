@@ -1,4 +1,4 @@
 # LocalFS
 
 [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/HexMakina/LocalFS/badges/quality-score.png?b=main)](https://scrutinizer-ci.com/g/HexMakina/LocalFS/?branch=main)
-[![Software License][ico-license]](LICENSE.md)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
