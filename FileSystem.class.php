@@ -78,7 +78,7 @@ class FileSystem
   {
     if(self::exists($src_path) && self::is_file($src_path))
     {
-      $dst = new FilePath($dst_path, true);
+      $dst = new FilePath($dst_path);
       if(self::exists($dst->dir()) && self::is_dir($dst->dir()))
       {
         return rename($src_path, $dst_path); // Returns TRUE on success or FALSE on failure.
