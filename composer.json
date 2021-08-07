@@ -3,5 +3,10 @@
     "description": "LocalFS is a PHP wrapper class for managing local filesystem",
     "require": {
         "php": ">=7.4"
+    },
+    "autoload": {
+        "psr-4": {
+            "HexMakina\\LocalFS\\": "/"
+        }
     }
 }
