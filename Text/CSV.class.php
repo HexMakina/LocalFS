@@ -29,10 +29,8 @@ fclose($fp);
 
 
 */
-	function array()
-	{
-		return array_map('str_getcsv', parent::array());
-	}
-
-
+    function array()
+    {
+        return array_map('str_getcsv', parent::array());
+    }
 }
