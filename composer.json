@@ -1,0 +1,7 @@
+{
+    "name": "HexMakina/LocalFS",
+    "description": "LocalFS is a PHP wrapper class for managing local filesystem",
+    "require": {
+        "php": ">=7.4"
+    }
+}
