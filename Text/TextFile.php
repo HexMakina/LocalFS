@@ -25,33 +25,37 @@ class TextFile extends \HexMakina\LocalFS\File
         return self::compare_content($filepath_1, $filepath_2, $read_length);
     }
 
-    public static function compare_content($filepath_1, $filepath_2, $read_length = 8192)
+    public static function compare_content($filepath_1, $filepath_2, $read_length = 8192) : bool
     {
-        try {
-            $file_1 = new TextFile($filepath_1, 'r');
-            $filepointer_1 = $file_1->open();
 
-            $file_2 = new TextFile($filepath_2, 'r');
-            $filepointer_2 = $file_2->open();
+        $file_1 = new TextFile($filepath_1, 'r');
+        $file_2 = new TextFile($filepath_2, 'r');
 
-            $identical = true;
-            while (!feof($filepointer_1) && !feof($filepointer_2) && $identical) {
-                if (false === ($buffer_1 = fread($filepointer_1, $read_length)) || false === ($buffer_2 = fread($filepointer_2, $read_length))) {
-                    throw new \Exception('FAILED fread('.$filepath_1.' or '.$filepath_2.')');
-                }
+        if($file_1->size() ! $file_2->size())
+          return false;
 
-                $identical = (0 === strcmp($buffer_1, $buffer_2));
-            }
+        $filepointer_1 = $file_1->open();
+        $filepointer_2 = $file_2->open();
 
-            if ($identical === true && feof($filepointer_1) !== feof($filepointer_2)) {
-                $identical = false;
-            }
-        } catch (\Exception $e) {
-            return false;
-        } finally {
+        $identical = true;
+        while(!feof($filepointer_1) && $identical === true)
+        {
+          $chunk_1 = fread($filepointer_1, $read_length);
+          $chunk_2 = fread($filepointer_2, $read_length);
+
+          if($chunk_1 === false || $chunk_2 === false)
+          {
             $file_1->close();
             $file_2->close();
+            throw \RuntimeException('fread returned false');
+          }
+
+          if($chunk_1 !== $chunk_2)
+            $identical = false;
         }
+
+        $file_1->close();
+        $file_2->close();
 
         return $identical;
     }
