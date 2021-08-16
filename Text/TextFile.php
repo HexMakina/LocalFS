@@ -31,7 +31,7 @@ class TextFile extends \HexMakina\LocalFS\File
         $file_1 = new TextFile($filepath_1, 'r');
         $file_2 = new TextFile($filepath_2, 'r');
 
-        if ($file_1->size() ! $file_2->size()) {
+        if ($file_1->size() !== $file_2->size()) {
             return false;
         }
 
