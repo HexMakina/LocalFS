@@ -46,7 +46,7 @@ class TextFile extends \HexMakina\LocalFS\File
             if ($chunk_1 === false || $chunk_2 === false) {
                 $file_1->close();
                 $file_2->close();
-                throw \RuntimeException('fread returned false');
+                throw new \RuntimeException('fread returned false');
             }
 
             if ($chunk_1 !== $chunk_2) {
