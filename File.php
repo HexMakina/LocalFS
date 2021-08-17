@@ -32,6 +32,11 @@ class File extends FileSystem
         return $this->pointer;
     }
 
+    public function pointer()
+    {
+      return $this->pointer ?? $this->open();
+    }
+
     public function close()
     {
         if (!is_resource($this->pointer)) {

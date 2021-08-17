@@ -35,23 +35,18 @@ class TextFile extends \HexMakina\LocalFS\File
             return false;
         }
 
-        $filepointer_1 = $file_1->open();
-        $filepointer_2 = $file_2->open();
-
         $identical = true;
-        while (!feof($filepointer_1) && $identical === true) {
-            $chunk_1 = fread($filepointer_1, $read_length);
-            $chunk_2 = fread($filepointer_2, $read_length);
+        while (!feof($file_1->pointer()) && $identical === true) {
+            $chunk_1 = fread($file_1->pointer(), $read_length);
+            $chunk_2 = fread($file_2->pointer(), $read_length);
 
             if ($chunk_1 === false || $chunk_2 === false) {
                 $file_1->close();
                 $file_2->close();
-                throw new \RuntimeException('fread returned false');
+                throw new \RuntimeException('fread failure');
             }
 
-            if ($chunk_1 !== $chunk_2) {
-                $identical = false;
-            }
+            $identical = $chunk_1 === $chunk_2; // must be last loop line
         }
 
         $file_1->close();
