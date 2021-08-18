@@ -16,7 +16,7 @@ class File extends FileSystem
     public function __construct($path_to_file, $mode = 'r')
     {
         if (!FileSystem::exists($path_to_file) && self::requires_existing_file($mode)) {
-            throw new \Exception('FILE_MUST_ALREADY_EXIST ('.$this->filepath().', '.$this->mode.')');
+            throw new \Exception('FILE_MUST_ALREADY_EXIST (' . $this->filepath() . ', ' . $this->mode . ')');
         }
 
         $this->filepath = new FilePath($path_to_file);
@@ -27,14 +27,14 @@ class File extends FileSystem
     {
         $this->pointer = fopen($this->filepath, $this->mode);
         if ($this->pointer === false) {
-            throw new \Exception('FILE_OPEN_FAILURE ('.$this->filepath().', '.$this->mode.')');
+            throw new \Exception('FILE_OPEN_FAILURE (' . $this->filepath() . ', ' . $this->mode . ')');
         }
         return $this->pointer;
     }
 
     public function pointer()
     {
-      return $this->pointer ?? $this->open();
+        return $this->pointer ?? $this->open();
     }
 
     public function close()
@@ -44,7 +44,7 @@ class File extends FileSystem
         }
 
         if (fclose($this->pointer) === false) {
-            throw new \Exception('FILE_CLOSE_FAILURE ('.$this->filepath().', '.$this->mode.')');
+            throw new \Exception('FILE_CLOSE_FAILURE (' . $this->filepath() . ', ' . $this->mode . ')');
         }
 
         return true;
@@ -58,12 +58,12 @@ class File extends FileSystem
     public function set_content($content)
     {
         if (is_writable($this->filepath) !== true && self::requires_existing_file($this->mode)) {
-            throw new \Exception('FILE_IS_NOT_WRITABLE ('.$this->filepath().', '.$this->mode.')');
+            throw new \Exception('FILE_IS_NOT_WRITABLE (' . $this->filepath() . ', ' . $this->mode . ')');
         }
 
         $this->open();
         if (fwrite($this->pointer, $content) === false) {
-            throw new \Exception('FILE_WRITE_FAILURE ('.$this->filepath().', '.$this->mode.')');
+            throw new \Exception('FILE_WRITE_FAILURE (' . $this->filepath() . ', ' . $this->mode . ')');
         }
         $this->close();
     }

@@ -19,20 +19,20 @@ class FilePath
 
     public function __toString()
     {
-        return ''.$this->filepath;
+        return '' . $this->filepath;
     }
 
-    public function dir() : string
+    public function dir(): string
     {
         return $this->parse()->directories;
     }
 
-    public function file() : string
+    public function file(): string
     {
         return $this->parse()->file;
     }
 
-    public function ext() : string
+    public function ext(): string
     {
         return $this->parse()->file_extension;
     }
@@ -46,7 +46,7 @@ class FilePath
             $this->file = $res['basename'];
             $this->file_extension = $res['extension'];
 
-            $this->already_parsed=true;
+            $this->already_parsed = true;
         }
         return $this;
     }

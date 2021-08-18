@@ -11,14 +11,14 @@ class INI extends TextFile
 
         if (is_array(current($array))) { // with sections
             foreach ($array as $section => $data) {
-                $ret.= PHP_EOL.PHP_EOL.self::section($section);
+                $ret .= PHP_EOL . PHP_EOL . self::section($section);
                 foreach ($data as $key => $value) {
-                    $ret.= PHP_EOL.self::line($key, $value);
+                    $ret .= PHP_EOL . self::line($key, $value);
                 }
             }
         } else { // no section
             foreach ($array as $key => $value) {
-                $ret.= self::line($key, $value);
+                $ret .= self::line($key, $value);
             }
         }
 

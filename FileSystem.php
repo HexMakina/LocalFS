@@ -14,10 +14,10 @@ class FileSystem
 
     public function path_to($filename)
     {
-        return $this->root_path.'/'.$filename;
+        return $this->root_path . '/' . $filename;
     }
 
-    public function filenames($regex = null) : array
+    public function filenames($regex = null): array
     {
         if (!file_exists($this->root_path) && mkdir($this->root_path) === false) {
             return [];
@@ -31,7 +31,7 @@ class FileSystem
         return $filenames;
     }
 
-    public function filepathes($regex = null) : array
+    public function filepathes($regex = null): array
     {
         $filenames = $this->filenames($regex);
         $filepathes = [];
@@ -67,7 +67,7 @@ class FileSystem
         if (is_link($path)) {
             $res = readlink($path);
             if ($res === false) {
-                throw new \Exception('readlink failed on '.$path);
+                throw new \Exception('readlink failed on ' . $path);
             }
 
             $path = $res;
@@ -105,7 +105,7 @@ class FileSystem
     }
 
 
-    public static function make_dir($dst_path, $permission = 0777, $recursive = true) : bool
+    public static function make_dir($dst_path, $permission = 0777, $recursive = true): bool
     {
         return mkdir($dst_path, $permission, $recursive);
     }
@@ -132,7 +132,7 @@ class FileSystem
         }
 
         if (($filenames = scandir($dir_path, SCANDIR_SORT_ASCENDING)) !== false) {
-            return is_null($regex)? $filenames : preg_grep($regex, $filenames);
+            return is_null($regex) ? $filenames : preg_grep($regex, $filenames);
         }
 
         throw new \Exception("directory path '$dir_path' cannot be scanned");
@@ -146,6 +146,6 @@ class FileSystem
 
     public static function server_info()
     {
-        return 'PHP '.PHP_VERSION.' | OS '.PHP_OS_FAMILY.' ('.PHP_OS.') | SAPI '.PHP_SAPI.' | GENESIS '.date('Y-m-d h:i:s');
+        return 'PHP ' . PHP_VERSION . ' | OS ' . PHP_OS_FAMILY . ' (' . PHP_OS . ') | SAPI ' . PHP_SAPI . ' | GENESIS ' . date('Y-m-d h:i:s');
     }
 }

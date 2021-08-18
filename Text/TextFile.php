@@ -25,7 +25,7 @@ class TextFile extends \HexMakina\LocalFS\File
         return self::compare_content($filepath_1, $filepath_2, $read_length);
     }
 
-    public static function compare_content($filepath_1, $filepath_2, $read_length = 8192) : bool
+    public static function compare_content($filepath_1, $filepath_2, $read_length = 8192): bool
     {
 
         $file_1 = new TextFile($filepath_1, 'r');
