@@ -4,12 +4,15 @@ namespace HexMakina\LocalFS\Text;
 
 class JSON extends TextFile
 {
-
-    public static function to_php($string, $assoc = false, $depth = 512, $options = 0)
+    /**
+     * @param int<1, max> $depth
+     */
+    public static function to_php(string $string, ?bool $assoc = false, int $depth = 512, int $options = 0)
     {
+        // https://www.php.net/manual/en/function.json-decode.php
         $ret = json_decode($string, $assoc, $depth, $options);
 
-        $error = self::has_errors();
+        $error = self::hasErrors();
         if ($error !== false) {
             throw new \Exception("ParsingException: $error");
         }
@@ -17,11 +20,15 @@ class JSON extends TextFile
         return $ret;
     }
 
-    public static function from_php($var, $options = 0, $depth = 512)
+    /**
+     * @param int<1, max> $depth
+     */
+    public static function from_php($var, $options = 0, $depth = 512): string
     {
+        // https://www.php.net/manual/en/function.json-encode.php
         $ret = json_encode($var, $options, $depth);
 
-        $error = self::has_errors();
+        $error = self::hasErrors();
         if ($error !== false) {
             throw new \Exception("ParsingException: $error");
         }
@@ -29,12 +36,11 @@ class JSON extends TextFile
         return $ret;
     }
 
-    private static function has_errors()
+    private static function hasErrors() : bool
     {
         if (json_last_error() === JSON_ERROR_NONE) {
             return false;
         }
-
-        return json_last_error_msg();
+        throw new \Exception('ParsingException: '.json_last_error_msg());;
     }
 }

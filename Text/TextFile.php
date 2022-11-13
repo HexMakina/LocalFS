@@ -5,7 +5,10 @@ namespace HexMakina\LocalFS\Text;
 class TextFile extends \HexMakina\LocalFS\File
 {
 
-    public static function identical($filepath_1, $filepath_2, $read_length = 8192)
+  /**
+   * @param int<0, max> $read_length
+   */
+    public static function identical(string $filepath_1, string $filepath_2, int $read_length = 8192) : bool
     {
       //** TEST FOR EXISTENCE
         if (!file_exists($filepath_1) || !file_exists($filepath_2)) {
@@ -25,7 +28,10 @@ class TextFile extends \HexMakina\LocalFS\File
         return self::compare_content($filepath_1, $filepath_2, $read_length);
     }
 
-    public static function compare_content($filepath_1, $filepath_2, $read_length = 8192): bool
+    /**
+     * @param int<0, max> $read_length
+     */
+    public static function compare_content(string $filepath_1, string $filepath_2, int $read_length = 8192): bool
     {
 
         $file_1 = new TextFile($filepath_1, 'r');
@@ -58,6 +64,10 @@ class TextFile extends \HexMakina\LocalFS\File
 
     public function __toString()
     {
-        return file_get_contents($this->filepath());
+        $ret = file_get_contents($this->filepath());
+        if($ret === false)
+            $ret = '';
+
+        return $ret;
     }
 }

@@ -12,7 +12,7 @@ class FileSystem
         $this->root_path = $root_path;
     }
 
-    public function path_to($filename)
+    public function path_to($filename) : string
     {
         return $this->root_path . '/' . $filename;
     }
@@ -44,19 +44,19 @@ class FileSystem
 
 
   // kontrolas ĉu la dosiero aŭ dosierujo ekzistas
-    public static function exists($src_path)
+    public static function exists($src_path) : bool
     {
         return file_exists($src_path);
     }
-    public static function is_file($src_path)
+    public static function is_file($src_path) : bool
     {
         return is_file($src_path);
     }
-    public static function is_dir($src_path)
+    public static function is_dir($src_path) : bool
     {
         return is_dir($src_path);
     }
-    public static function is_link($src_path)
+    public static function is_link($src_path) : bool
     {
         return is_link($src_path);
     }
@@ -72,10 +72,11 @@ class FileSystem
 
             $path = $res;
         }
+
         return $path;
     }
 
-    public static function copy($src_path, $dst_path)
+    public static function copy($src_path, $dst_path) : bool
     {
         if (self::exists($src_path) && self::is_file($src_path)) {
             $dst = new FilePath($dst_path);
@@ -89,7 +90,7 @@ class FileSystem
         return false;
     }
 
-    public static function move($src_path, $dst_path)
+    public static function move($src_path, $dst_path) : bool
     {
         if (self::exists($src_path) && self::is_file($src_path)) {
             $dst = new FilePath($dst_path);
@@ -110,7 +111,7 @@ class FileSystem
         return mkdir($dst_path, $permission, $recursive);
     }
 
-    public static function remove($src_path, $follow_link = false)
+    public static function remove($src_path, $follow_link = false) : bool
     {
         $ret = false;
         if (self::exists($src_path)) {
@@ -125,6 +126,7 @@ class FileSystem
         return $ret;
     }
 
+    // returns union type, wait for php8 : null|array|false
     public static function preg_scandir($dir_path, $regex = null)
     {
         if (!self::exists($dir_path) || !self::is_dir($dir_path)) {
@@ -144,7 +146,7 @@ class FileSystem
   // dir() - Return an instance of the Directory class
   // opendir() - Open directory handle
 
-    public static function server_info()
+    public static function server_info() : string
     {
         return 'PHP ' . PHP_VERSION . ' | OS ' . PHP_OS_FAMILY . ' (' . PHP_OS . ') | SAPI ' . PHP_SAPI . ' | GENESIS ' . date('Y-m-d h:i:s');
     }

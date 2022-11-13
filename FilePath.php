@@ -6,11 +6,11 @@ class FilePath
 {
     private $filepath = null;
 
-    private $already_parsed = false;
-
     private $directories = null;
     private $file = null;
     private $file_extension = null;
+
+    private $already_parsed = false;
 
     public function __construct($filepath)
     {
@@ -24,20 +24,23 @@ class FilePath
 
     public function dir(): string
     {
-        return $this->parse()->directories;
+        $this->parse();
+        return $this->directories;
     }
 
     public function file(): string
     {
-        return $this->parse()->file;
+      $this->parse();
+      return $this->file;
     }
 
     public function ext(): string
     {
-        return $this->parse()->file_extension;
+      $this->parse();
+      return $this->file_extension;
     }
 
-    private function parse()
+    private function parse() : FilePath
     {
         if ($this->already_parsed === false) {
             $res = pathinfo($this->filepath);
@@ -48,6 +51,7 @@ class FilePath
 
             $this->already_parsed = true;
         }
+
         return $this;
     }
 }

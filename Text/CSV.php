@@ -29,7 +29,7 @@ fclose($fp);
 
 
 */
-    function array()
+    function array() : array
     {
         return array_map('str_getcsv', parent::array());
     }

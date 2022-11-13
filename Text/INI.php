@@ -5,7 +5,7 @@ namespace HexMakina\LocalFS\Text;
 class INI extends TextFile
 {
 
-    public static function from_array($array)
+    public static function from_array(array $array) : string
     {
         $ret = '# INI Dump';
 
@@ -25,21 +25,24 @@ class INI extends TextFile
         return $ret;
     }
 
-    public static function to_array($filepath, $with_sections = true, $mode = INI_SCANNER_RAW)
+    public static function to_array(string $filepath, bool $with_sections = true, int $mode = INI_SCANNER_RAW) : ?array
     {
-        return parse_ini_file($filepath, $with_sections, $mode);
-      //https://secure.php.net/manual/en/function.parse-ini-file.php
+        // https://secure.php.net/manual/en/function.parse-ini-file.php
+        $ret = parse_ini_file($filepath, $with_sections, $mode);
+        if($ret === false)
+            return null;
+
+        return $ret;
     }
 
 
-
-    private static function section($key)
+    private static function section($key) : string
     {
         $key = self::format_key($key);
         return "[$key]";
     }
 
-    private static function line($key, $val)
+    private static function line($key, $val) : string
     {
         $key = self::format_key($key);
         $val = self::format_key($val);
