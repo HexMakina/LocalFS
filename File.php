@@ -4,30 +4,41 @@ namespace HexMakina\LocalFS;
 
 class File extends FileSystem
 {
-    private $filepath = null;
-    private $mode = null;
-    private $size_in_bytes = null;
+    private FilePath $path;
+    private string $mode;
+    private int $size_in_bytes = -1;
     private $pointer = null;
 
-    private static $modes_require_existing_file = ['r', 'r+'];
-  // private static $modes_create_unexisting_file = ['w', 'w+', 'a', 'a+', 'c', 'c+'];
-  // private static $modes_require_unexisting_file = ['x', 'x+'];
+    private const MODE_REQUIRES_EXISTING_FILE = ['r', 'r+'];
+    private const MODE_REQUIRES_UNEXISTING_FILE = ['x', 'x+'];
 
-    public function __construct($path_to_file, $mode = 'r')
+    // private static $modes_create_unexisting_file = ['w', 'w+', 'a', 'a+', 'c', 'c+'];
+
+    public function __construct(string $path, string $mode = 'r')
     {
-        if (!FileSystem::exists($path_to_file) && self::requires_existing_file($mode)) {
-            throw new \Exception('FILE_MUST_ALREADY_EXIST (' . $this->filepath() . ', ' . $this->mode . ')');
+        if (!file_exists($path) && self::requiresExistingFile($mode)) {
+            throw new \InvalidArgumentException('MODE_REQUIRES_EXISTING_FILE');
         }
 
-        $this->filepath = new FilePath($path_to_file);
+        $this->path = new FilePath($path);
         $this->mode = $mode;
+    }
+
+    public function path(): string
+    {
+        return $this->path->__toString();
+    }
+
+    public function getFilePath(): FilePath
+    {
+        return $this->path;
     }
 
     public function open()
     {
-        $this->pointer = fopen($this->filepath, $this->mode);
+        $this->pointer = fopen($this->path(), $this->mode);
         if ($this->pointer === false) {
-            throw new \Exception('FILE_OPEN_FAILURE (' . $this->filepath() . ', ' . $this->mode . ')');
+            throw new \Exception('FILE_OPEN_FAILURE');
         }
         return $this->pointer;
     }
@@ -44,7 +55,7 @@ class File extends FileSystem
         }
 
         if (fclose($this->pointer) === false) {
-            throw new \Exception('FILE_CLOSE_FAILURE (' . $this->filepath() . ', ' . $this->mode . ')');
+            throw new \Exception('FILE_CLOSE_FAILURE');
         }
 
         return true;
@@ -52,45 +63,58 @@ class File extends FileSystem
 
     public function array()
     {
-        return file($this->filepath);
+        return file($this->path);
     }
 
-    public function set_content($content)
+    public function setContent($content)
     {
-        if (is_writable($this->filepath) !== true && self::requires_existing_file($this->mode)) {
-            throw new \Exception('FILE_IS_NOT_WRITABLE (' . $this->filepath() . ', ' . $this->mode . ')');
+        if (is_writable($this->path()) !== true && self::requiresExistingFile($this->mode)) {
+            throw new \Exception('FILE_IS_NOT_WRITABLE');
         }
 
         $this->open();
         if (fwrite($this->pointer, $content) === false) {
-            throw new \Exception('FILE_WRITE_FAILURE (' . $this->filepath() . ', ' . $this->mode . ')');
+            throw new \Exception('FILE_WRITE_FAILURE');
         }
         $this->close();
     }
 
-    public function filepath()
+   
+    public function getMIMEType($fast=true): string
     {
-        return $this->filepath;
+        if($fast === true || extension_loaded('fileinfo') === false){
+            return mime_content_type($this->path());
+        }
+
+        $res = finfo_open(FILEINFO_MIME_TYPE);
+
+        if ($res === false) {
+            throw new \Exception('UNABLE_TO_OPEN_FILEINFO');
+        }
+
+        $mimeType = finfo_file($res, $this->path());
+
+        finfo_close($res);
+
+        if ($mimeType === false) {
+            throw new \Exception('UNABLE_TO_DETECT_MIME_TYPE');
+        }
+
+        return $mimeType;
     }
 
-    public function has_mime()
+    public function size(): int
     {
-        return mime_content_type($this->filepath()); // Returns the content type in MIME format, like text/plain or application/octet-stream, or FALSE on failure.
-    }
-
-    public function size()
-    {
-        $res = $this->size_in_bytes;
-
-        if (is_null($res) && ($res = filesize("$this->filepath")) !== false) {
+        if ($this->size_in_bytes === -1 && ($res = filesize($this->path())) !== false) {
             $this->size_in_bytes = $res;
         }
 
-        return $res;
+        return $this->size_in_bytes;
     }
 
-    private static function requires_existing_file($mode)
+    private static function requiresExistingFile($mode)
     {
-        return in_array($mode, self::$modes_require_existing_file);
+        return in_array($mode, self::MODE_REQUIRES_EXISTING_FILE);
     }
+
 }
