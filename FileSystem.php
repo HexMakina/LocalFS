@@ -54,8 +54,6 @@ class FileSystem
      */
     public function absolutePathFor(string $relativePath, bool $checkExistence = false): string
     {
-        $this->validRelativePath($relativePath);
-
         $absolute = sprintf('%s/%s', $this->root(), $relativePath);
 
         if ($checkExistence) {
@@ -95,7 +93,6 @@ class FileSystem
     public function files(string $relativePath): array
     {
         $absolutePath = $this->absolutePathFor($relativePath);
-
         // Filter the list of files to include only files (not directories).
         $files = array_filter($this->list($relativePath), function ($filename) use ($absolutePath) {
             return is_file($absolutePath . DIRECTORY_SEPARATOR . $filename);
