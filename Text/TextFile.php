@@ -58,6 +58,6 @@ class TextFile extends \HexMakina\LocalFS\File
 
     public function __toString()
     {
-        return file_get_contents($this->filepath());
+        return file_get_contents($this->path());
     }
 }

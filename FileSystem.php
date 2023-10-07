@@ -278,12 +278,12 @@ class FileSystem
      * @return array|null Returns an array of file and directory names that match the regular expression, or NULL if the directory doesn't exist.
      * @throws \Exception If the directory cannot be scanned.
      */
-    public static function pregScandir($directoryPath, $regex = null)
+    public static function preg_scandir($directoryPath, $regex = null)
     {
         if (!file_exists($directoryPath) || !is_dir($directoryPath)) {
             return null;
         }
-
+        
         if (($fileNames = scandir($directoryPath, SCANDIR_SORT_ASCENDING)) !== false) {
             return is_null($regex) ? $fileNames : preg_grep($regex, $fileNames);
         }
