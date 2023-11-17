@@ -2,6 +2,8 @@
 
 namespace HexMakina\LocalFS\Text;
 
+use HexMakina\LocalFS\FileSystem;
+
 class TextFile extends \HexMakina\LocalFS\File
 {
 
@@ -16,8 +18,8 @@ class TextFile extends \HexMakina\LocalFS\File
         }
 
       //** TEST FOR SYMLINK
-        $filepath_1 = self::resolve_symlink($filepath_1);
-        $filepath_2 = self::resolve_symlink($filepath_2);
+        $filepath_1 = FileSystem::resolve_symlink($filepath_1);
+        $filepath_2 = FileSystem::resolve_symlink($filepath_2);
 
       //** TEST FOR IDENTICAL TYPE AND SIZE
         if (filetype($filepath_1) !== filetype($filepath_2) || filesize($filepath_1) !== filesize($filepath_2)) {
@@ -64,9 +66,9 @@ class TextFile extends \HexMakina\LocalFS\File
 
     public function __toString()
     {
-        $ret = file_get_contents($this->filepath());
+        $ret = file_get_contents($this->path());
         if($ret === false)
-            $ret = '';
+            $ret = $this->path();
 
         return $ret;
     }
