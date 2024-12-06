@@ -30,17 +30,17 @@ class FilePath
 
     public function file(): string
     {
-      $this->parse();
-      return $this->file;
+        $this->parse();
+        return $this->file;
     }
 
     public function ext(): string
     {
-      $this->parse();
-      return $this->file_extension;
+        $this->parse();
+        return $this->file_extension;
     }
 
-    private function parse() : FilePath
+    private function parse(): FilePath
     {
         if ($this->already_parsed === false) {
             $res = pathinfo($this->filepath);
