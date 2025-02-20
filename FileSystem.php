@@ -32,6 +32,11 @@ class FileSystem
 
         $this->rootPath = $rootPath;
     }
+    
+    public function __toString()
+    {
+        return $this->root();
+    }
 
     /**
      * Returns the starting point of a filesystem's abstraction, not the machine's filesystem root. 
