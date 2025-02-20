@@ -3,12 +3,18 @@
 namespace HexMakina\LocalFS;
 
 /**
- * FILEPATH: /var/www/dev.engine/krafto-cinergie/lib/LocalFS/FileSystem.php
+ * The FileSystem class provides methods to interact with a directory and its subdirectories.
  * 
- * The FileSystem class provides a set of methods to interact with a directory and subdirectories.
- * The root is the starting point of the represented file system.
- * It allows to work with relative paths and provides methods to get absolute paths, list directories and files,
- * and ensure that a path is writable.
+ * It represents a file system abstraction with a specified root directory as the starting point.
+ * This class allows working with relative paths and provides functionality to:
+ * - Get absolute paths
+ * - List directories and files
+ * - Ensure paths are writable
+ * - Copy and move files
+ * - Create and remove directories
+ * - Scan directories with regex matching
+ * 
+ * It relies heavily on the PHP SPL (Standard PHP Library) and the RecursiveDirectoryIterator class.
  * 
  * @package HexMakina\LocalFS
  */
@@ -32,7 +38,7 @@ class FileSystem
 
         $this->rootPath = $rootPath;
     }
-    
+
     public function __toString()
     {
         return $this->root();
@@ -64,7 +70,7 @@ class FileSystem
         if ($checkExistence) {
             $absolute = realpath($absolute);
             if (!$absolute) {
-                throw new \InvalidArgumentException('INVALID_PATH');
+                throw new \InvalidArgumentException('INVALID_RELATIVE_PATH');
             }
         }
 
@@ -72,13 +78,13 @@ class FileSystem
     }
 
     /**
-     * Lists the contents of a directory.
+     * Returns an iterator for the contents of a directory.
      *
      * @param string $relativePath The relative path of the directory to list.
-     * @return array An array of filenames in the directory.
+     * @return \Iterator An iterator for the filenames in the directory.
      * @throws \InvalidArgumentException If the specified path is not a directory.
      */
-    public function list(string $relativePath): array
+    public function list(string $relativePath): \Iterator
     {
         $absolutePath = $this->absolutePathFor($relativePath);
 
@@ -86,53 +92,62 @@ class FileSystem
             throw new \InvalidArgumentException('RELATIVE_PATH_NOT_A_DIRECTORY');
         }
 
-        return array_diff(scandir($absolutePath), ['.', '..']);
+        return new \CallbackFilterIterator(
+            new \DirectoryIterator($absolutePath),
+            function ($fileInfo) {
+                return !$fileInfo->isDot();
+            }
+        );
     }
 
     /**
-     * Returns an array of files in the specified directory.
+     * Returns an iterator for the files in the specified directory.
      *
-     * @param string $relativePath The relative path of the directory to search.
-     * @return array An array of file names.
+     * This function retrieves an iterator that filters and returns only the files
+     * within a given directory specified by the relative path.
+     *
+     * @param string $relativePath This path is relative to the root of the file system
+     * @return \Iterator An iterator that yields file information objects for each file
+     *                   found in the specified directory.
      */
-    public function files(string $relativePath): array
+    public function files(string $relativePath): \Iterator
     {
         $absolutePath = $this->absolutePathFor($relativePath);
-        // Filter the list of files to include only files (not directories).
-        $files = array_filter($this->list($relativePath), function ($filename) use ($absolutePath) {
-            return is_file($absolutePath . DIRECTORY_SEPARATOR . $filename);
-        });
-
-        return $files;
+        return new \CallbackFilterIterator(
+            $this->list($relativePath),
+            function ($fileInfo) use ($absolutePath) {
+                return is_file($absolutePath . DIRECTORY_SEPARATOR . $fileInfo->getFilename());
+            }
+        );
     }
 
     /**
-     * Returns an array of directories in the specified relative path.
+     * Returns an iterator for directories in the specified relative path.
      *
      * @param string $relativePath The relative path to search for directories.
-     * @return array An array of directories in the specified relative path.
+     * @return \Iterator An iterator for the directories in the specified relative path.
      */
-    public function directories(string $relativePath): array
+    public function directories(string $relativePath): \Iterator
     {
         $absolutePath = $this->absolutePathFor($relativePath);
 
-        // Filter the list of files to include only files (not directories).
-        $files = array_filter($this->list($relativePath), function ($filename) use ($absolutePath) {
-            return is_dir($absolutePath . DIRECTORY_SEPARATOR . $filename);
-        });
-
-        return $files;
+        return new \CallbackFilterIterator(
+            $this->list($relativePath),
+            function ($fileInfo) use ($absolutePath) {
+                return is_dir($absolutePath . DIRECTORY_SEPARATOR . $fileInfo->getFilename());
+            }
+        );
     }
 
     /**
      * Ensures that the specified relative path is writable.
      *
-     * @param string $relativePath The relative path to ensure is writable.
+     * @param string $absoluteDirectoryPath The absolute path to ensure is writable.
+     * @param string|null $filename Optional filename to check within the directory.
      * @throws \InvalidArgumentException If the path is not inside the root path, the target directory cannot be created, or the target directory is not writable.
      * @return bool True if the path is writable, false otherwise.
      */
-
-    public function ensureWritablePath(string $absoluteDirectoryPath, string $filename=null): bool
+    public function ensureWritablePath(string $absoluteDirectoryPath, string $filename = null): bool
     {
         if (strpos($absoluteDirectoryPath, $this->root()) !== 0) {
             throw new \InvalidArgumentException('PATH_NOT_INSIDE_ROOT_PATH');
@@ -140,17 +155,14 @@ class FileSystem
 
         $relativeDirectoryPath = substr($absoluteDirectoryPath, strlen($this->root()) + 1);
         $pathParts = explode('/', $relativeDirectoryPath);
-        
 
         $targetDir = $this->root();
-        foreach ($pathParts as $i => $part) {
+        foreach ($pathParts as $part) {
             $targetDir .= '/' . $part;
 
-            // Create the folder if it doesn't exist
-            if (!file_exists($targetDir) && mkdir($targetDir, 0755, true) === false) {
+            if (!file_exists($targetDir) && !mkdir($targetDir, 0755, true)) {
                 throw new \InvalidArgumentException('UNABLE_TO_CREATE_MISSING_TARGET_DIRECTORY');
             }
-
             if (!is_dir($targetDir)) {
                 throw new \InvalidArgumentException('TARGET_DIRECTORY_NOT_A_DIRECTORY');
             }
@@ -158,33 +170,44 @@ class FileSystem
                 throw new \InvalidArgumentException('TARGET_DIRECTORY_NOT_WRITABLE');
             }
         }
+
+        if ($filename !== null) {
+            $filePath = $targetDir . '/' . $filename;
+            if (file_exists($filePath) && !is_writable($filePath)) {
+                throw new \InvalidArgumentException('FILE_NOT_WRITABLE');
+            }
+        }
         return true;
     }
 
-    public function filenames($regex = null): array
+    /**
+     * Returns an iterator for filenames in the root directory that match the given pattern.
+     *
+     * @param string|null $pattern The glob pattern to match filenames against. If null, all files are returned.
+     * @return \Iterator An iterator yielding matching filenames.
+     * @throws \RuntimeException If the root directory cannot be accessed.
+     */
+    public function filenames(?string $pattern = null): \Iterator
     {
-        if (!file_exists($this->rootPath) && mkdir($this->rootPath) === false) {
-            return [];
+        if (!is_dir($this->rootPath)) {
+            throw new \RuntimeException('Unable to access the root directory.');
         }
 
-        $filenames = self::preg_scandir($this->rootPath, $regex); // ID_SEQUENCENUMBER.ext
-        if (!is_null($filenames)) {
-            sort($filenames);
-        }
+        $globPattern = $this->rootPath . DIRECTORY_SEPARATOR . ($pattern ?? '*');
+        $iterator = new \GlobIterator($globPattern, \FilesystemIterator::SKIP_DOTS);
 
-        return $filenames;
+        return new \CallbackFilterIterator($iterator, function($current) {
+            return $current->isFile();
+        });
     }
 
     // previous implementation, to update
-    public function filepathes($regex = null): array
+    public function filepathes($regex = null): \Iterator
     {
         $filenames = $this->filenames($regex);
-        $filepathes = [];
-        foreach ($filenames as $filename) {
-            $filepathes[] = $this->absolutePathFor($filename);
-        }
-
-        return $filepathes;
+        return new \CallbackFilterIterator($filenames, function($file) {
+            return $this->absolutePathFor($file->getPathname());
+        });
     }
 
     /**
@@ -289,7 +312,7 @@ class FileSystem
         if (!file_exists($directoryPath) || !is_dir($directoryPath)) {
             return null;
         }
-        
+
         if (($fileNames = scandir($directoryPath, SCANDIR_SORT_ASCENDING)) !== false) {
             return is_null($regex) ? $fileNames : preg_grep($regex, $fileNames);
         }
