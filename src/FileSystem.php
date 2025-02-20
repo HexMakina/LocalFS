@@ -163,10 +163,6 @@ class FileSystem
 
     public function filenames($regex = null): array
     {
-        if (!file_exists($this->rootPath) && mkdir($this->rootPath) === false) {
-            return [];
-        }
-
         $filenames = self::preg_scandir($this->rootPath, $regex); // ID_SEQUENCENUMBER.ext
         if (!is_null($filenames)) {
             sort($filenames);

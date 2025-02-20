@@ -16,7 +16,12 @@
     "minimum-stability": "dev",
     "autoload": {
         "psr-4": {
-            "HexMakina\\LocalFS\\": "/"
+            "HexMakina\\LocalFS\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "HexMakina\\LocalFS\\Tests\\": "tests/"
         }
     }
 }
