@@ -32,6 +32,11 @@ class FileSystem
 
         $this->rootPath = $rootPath;
     }
+    
+    public function __toString()
+    {
+        return $this->root();
+    }
 
     /**
      * Returns the starting point of a filesystem's abstraction, not the machine's filesystem root. 
@@ -218,22 +223,32 @@ class FileSystem
     }
 
     /**
-     * Moves a file from the source path to the destination path.
+     * Moves a file or directory from the source path to the destination path.
      *
-     * @param string $sourcePath The path of the source file.
-     * @param string $destinationPath The path of the destination file.
+     * @param string $sourcePath The path of the source file or directory.
+     * @param string $destinationPath The path of the destination file or directory.
      * @return bool Returns TRUE on success or FALSE on failure.
      */
-    public static function move($sourcePath, $destinationPath)
+    public static function move($sourcePath, $destinationPath): bool
     {
-        if (file_exists($sourcePath) && is_file($sourcePath)) {
-            $destination = new FilePath($destinationPath);
-            if (file_exists($destination->dir()) && is_dir($destination->dir())) {
-                return rename($sourcePath, $destinationPath);
+        if (!file_exists($sourcePath)) {
+            throw new \InvalidArgumentException('SOURCE_PATH_DOES_NOT_EXIST');
+        }
+
+        $destination = new FilePath($destinationPath);
+        $destinationDir = $destination->dir();
+
+        if (!file_exists($destinationDir)) {
+            if (!mkdir($destinationDir, 0755, true)) {
+                throw new \InvalidArgumentException('DESTINATION_DIRECTORY_DOES_NOT_EXIST_AND_CANNOT_BE_CREATED');
             }
         }
 
-        return false;
+        if (!is_dir($destinationDir) || !is_writable($destinationDir)) {
+            throw new \InvalidArgumentException('DESTINATION_DIRECTORY_NOT_WRITABLE');
+        }
+
+        return rename($sourcePath, $destinationPath);
     }
 
     /**
