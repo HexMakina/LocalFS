@@ -47,7 +47,7 @@ class FilePath
 
             $this->directories = $res['dirname'];
             $this->file = $res['basename'];
-            $this->file_extension = $res['extension'];
+            $this->file_extension = $res['extension'] ?? '';
 
             $this->already_parsed = true;
         }
