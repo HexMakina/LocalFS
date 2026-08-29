@@ -8,6 +8,7 @@ class FilePath
 
     private $directories = null;
     private $file = null;
+    private $filename = null;
     private $file_extension = null;
 
     private $already_parsed = false;
@@ -30,24 +31,36 @@ class FilePath
 
     public function file(): string
     {
-        $this->parse();
-        return $this->file;
+      $this->parse();
+      return $this->file;
+    }
+
+    public function basename(): string
+    {
+      return $this->file();
+    }
+
+    public function filename(): string
+    {
+      $this->parse();
+      return $this->filename;
     }
 
     public function ext(): string
     {
-        $this->parse();
-        return $this->file_extension;
+      $this->parse();
+      return $this->file_extension;
     }
 
-    private function parse(): FilePath
+    private function parse() : FilePath
     {
         if ($this->already_parsed === false) {
             $res = pathinfo($this->filepath);
 
             $this->directories = $res['dirname'];
-            $this->file = $res['basename'];
-            $this->file_extension = $res['extension'];
+            $this->file = $res['basename'] ?? '';
+            $this->filename = $res['filename'] ?? '';
+            $this->file_extension = $res['extension'] ?? '';
 
             $this->already_parsed = true;
         }

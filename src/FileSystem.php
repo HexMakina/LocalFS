@@ -59,16 +59,111 @@ class FileSystem
      */
     public function absolutePathFor(string $relativePath, bool $checkExistence = false): string
     {
-        $absolute = sprintf('%s/%s', $this->root(), $relativePath);
+        $relativePath = $this->normalizeRelativePath($relativePath);
+        $absolute = $relativePath === '' ? $this->root() : sprintf('%s/%s', $this->root(), $relativePath);
 
         if ($checkExistence) {
-            $absolute = realpath($absolute);
-            if (!$absolute) {
+            $resolvedAbsolute = realpath($absolute);
+            if (!$resolvedAbsolute) {
                 throw new \InvalidArgumentException('INVALID_PATH');
             }
+
+            $this->assertPathInsideRoot($resolvedAbsolute);
         }
 
         return $absolute;
+    }
+
+    public function pathIsInsideRoot(string $absolutePath): bool
+    {
+        try {
+            $resolvedPath = realpath($absolutePath);
+            $this->assertPathInsideRoot($resolvedPath ?: $this->normalizeAbsolutePath($absolutePath));
+        } catch (\InvalidArgumentException $e) {
+            return false;
+        }
+
+        return true;
+    }
+
+    private function normalizeRelativePath(string $relativePath): string
+    {
+        $relativePath = str_replace('\\', DIRECTORY_SEPARATOR, $relativePath);
+
+        if ($this->isAbsolutePath($relativePath)) {
+            throw new \InvalidArgumentException('PATH_NOT_INSIDE_ROOT_PATH');
+        }
+
+        $parts = [];
+        foreach (explode(DIRECTORY_SEPARATOR, $relativePath) as $part) {
+            if ($part === '' || $part === '.') {
+                continue;
+            }
+
+            if ($part === '..') {
+                if (empty($parts)) {
+                    throw new \InvalidArgumentException('PATH_NOT_INSIDE_ROOT_PATH');
+                }
+
+                array_pop($parts);
+                continue;
+            }
+
+            $parts[] = $part;
+        }
+
+        return implode(DIRECTORY_SEPARATOR, $parts);
+    }
+
+    private function isAbsolutePath(string $path): bool
+    {
+        return $path !== '' && ($path[0] === DIRECTORY_SEPARATOR || preg_match('~^[A-Za-z]:[\\\\/]~', $path) === 1);
+    }
+
+    private function normalizeAbsolutePath(string $absolutePath): string
+    {
+        $absolutePath = str_replace('\\', DIRECTORY_SEPARATOR, $absolutePath);
+
+        if (!$this->isAbsolutePath($absolutePath)) {
+            throw new \InvalidArgumentException('PATH_NOT_INSIDE_ROOT_PATH');
+        }
+
+        if (preg_match('~^[A-Za-z]:[\\\\/]~', $absolutePath) === 1) {
+            $prefix = substr($absolutePath, 0, 2) . DIRECTORY_SEPARATOR;
+            $absolutePath = substr($absolutePath, 3);
+        } else {
+            $prefix = DIRECTORY_SEPARATOR;
+            $absolutePath = ltrim($absolutePath, DIRECTORY_SEPARATOR);
+        }
+
+        $parts = [];
+        foreach (explode(DIRECTORY_SEPARATOR, $absolutePath) as $part) {
+            if ($part === '' || $part === '.') {
+                continue;
+            }
+
+            if ($part === '..') {
+                if (!empty($parts)) {
+                    array_pop($parts);
+                }
+
+                continue;
+            }
+
+            $parts[] = $part;
+        }
+
+        return $prefix . implode(DIRECTORY_SEPARATOR, $parts);
+    }
+
+    private function assertPathInsideRoot(string $absolutePath): void
+    {
+        $root = rtrim($this->root(), DIRECTORY_SEPARATOR);
+        $path = rtrim($absolutePath, DIRECTORY_SEPARATOR);
+
+        if ($path !== $root && strpos($path, $root . DIRECTORY_SEPARATOR) !== 0) {
+            throw new \InvalidArgumentException('PATH_NOT_INSIDE_ROOT_PATH');
+        }
     }
 
     /**
@@ -115,7 +210,6 @@ class FileSystem
     public function directories(string $relativePath): array
     {
         $absolutePath = $this->absolutePathFor($relativePath);
-
         // Filter the list of files to include only files (not directories).
         $files = array_filter($this->list($relativePath), function ($filename) use ($absolutePath) {
             return is_dir($absolutePath . DIRECTORY_SEPARATOR . $filename);
@@ -132,9 +226,9 @@ class FileSystem
      * @return bool True if the path is writable, false otherwise.
      */
 
-    public function ensureWritablePath(string $absoluteDirectoryPath, string $filename=null): bool
+    public function ensureWritablePath(string $absoluteDirectoryPath, ?string $filename = null): bool
     {
-        if (strpos($absoluteDirectoryPath, $this->root()) !== 0) {
+        if (!$this->pathIsInsideRoot($absoluteDirectoryPath)) {
             throw new \InvalidArgumentException('PATH_NOT_INSIDE_ROOT_PATH');
         }
 
@@ -155,7 +249,7 @@ class FileSystem
                 throw new \InvalidArgumentException('TARGET_DIRECTORY_NOT_A_DIRECTORY');
             }
             if (!is_writable($targetDir)) {
-                throw new \InvalidArgumentException('TARGET_DIRECTORY_NOT_WRITABLE');
+                throw new \InvalidArgumentException('TARGET_DIRECTORY_NOT_WRITABLE (' . $targetDir . ')');
             }
         }
         return true;
@@ -163,6 +257,10 @@ class FileSystem
 
     public function filenames($regex = null): array
     {
+        if (!file_exists($this->rootPath) && mkdir($this->rootPath) === false) {
+            return [];
+        }
+
         $filenames = self::preg_scandir($this->rootPath, $regex); // ID_SEQUENCENUMBER.ext
         if (!is_null($filenames)) {
             sort($filenames);
@@ -219,22 +317,32 @@ class FileSystem
     }
 
     /**
-     * Moves a file from the source path to the destination path.
+     * Moves a file or directory from the source path to the destination path.
      *
-     * @param string $sourcePath The path of the source file.
-     * @param string $destinationPath The path of the destination file.
+     * @param string $sourcePath The path of the source file or directory.
+     * @param string $destinationPath The path of the destination file or directory.
      * @return bool Returns TRUE on success or FALSE on failure.
      */
-    public static function move($sourcePath, $destinationPath)
+    public static function move($sourcePath, $destinationPath): bool
     {
-        if (file_exists($sourcePath) && is_file($sourcePath)) {
-            $destination = new FilePath($destinationPath);
-            if (file_exists($destination->dir()) && is_dir($destination->dir())) {
-                return rename($sourcePath, $destinationPath);
+        if (!file_exists($sourcePath)) {
+            throw new \InvalidArgumentException('SOURCE_PATH_DOES_NOT_EXIST');
+        }
+
+        $destination = new FilePath($destinationPath);
+        $destinationDir = $destination->dir();
+
+        if (!file_exists($destinationDir)) {
+            if (!mkdir($destinationDir, 0755, true)) {
+                throw new \InvalidArgumentException('DESTINATION_DIRECTORY_DOES_NOT_EXIST_AND_CANNOT_BE_CREATED');
             }
         }
 
-        return false;
+        if (!is_dir($destinationDir) || !is_writable($destinationDir)) {
+            throw new \InvalidArgumentException('DESTINATION_DIRECTORY_NOT_WRITABLE');
+        }
+
+        return rename($sourcePath, $destinationPath);
     }
 
     /**

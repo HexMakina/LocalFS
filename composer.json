@@ -18,10 +18,5 @@
         "psr-4": {
             "HexMakina\\LocalFS\\": "src/"
         }
-    },
-    "autoload-dev": {
-        "psr-4": {
-            "HexMakina\\LocalFS\\Tests\\": "tests/"
-        }
     }
 }
